@@ -88,9 +88,9 @@ piDC::piDC( wxGLCanvas &canvas ) :
     m_buseTex = GetLocaleCanonicalName().IsSameAs(_T("en_US"));
     workBuf = NULL;
     workBufSize = 0;
-    s_odc_tess_work_buf = NULL;
     
 #ifdef USE_ANDROID_GLES2
+    s_odc_tess_work_buf = NULL;
     s_odc_tess_vertex_idx = 0;
     s_odc_tess_vertex_idx_this = 0;
     s_odc_tess_buf_len = 0;
@@ -120,7 +120,9 @@ piDC::piDC( wxDC &pdc ) :
     m_buseTex = GetLocaleCanonicalName().IsSameAs(_T("en_US"));
     workBuf = NULL;
     workBufSize = 0;
+#ifdef USE_ANDROID_GLES2
     s_odc_tess_work_buf = NULL;
+#endif
     
 }
 
@@ -139,7 +141,9 @@ piDC::piDC() :
     m_buseTex = GetLocaleCanonicalName().IsSameAs(_T("en_US"));
     workBuf = NULL;
     workBufSize = 0;
+#ifdef USE_ANDROID_GLES2
     s_odc_tess_work_buf = NULL;
+#endif
 
     GLint parms[2];
     glGetIntegerv( GL_SMOOTH_LINE_WIDTH_RANGE, &parms[0] );
@@ -156,7 +160,9 @@ piDC::~piDC()
 #endif
     free(workBuf);
     
+#ifdef USE_ANDROID_GLES2
     free(s_odc_tess_work_buf);
+#endif
     
 }
 
@@ -1618,7 +1624,7 @@ void piDC::DrawPolygonTessellated( int n, wxPoint points[], wxCoord xoffset, wxC
 {
     if( dc )
         dc->DrawPolygon( n, points, xoffset, yoffset );
-#ifdef ocpnUSE_GL
+#ifdef ocpnUSE_GL1
     else {
 #if !defined(ocpnUSE_GLES) || defined(USE_ANDROID_GLES2) // tessalator in glues is broken
         if( n < 5 )
