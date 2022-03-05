@@ -33,11 +33,13 @@
 # include <OpenGL/gl3.h>
 #endif
 
-#ifdef OCPN_FLATPAK_BUILD
 #ifdef __OCPN__ANDROID__
 #include <qopengl.h>
 #include "GL/gl_private.h"
 #endif
+
+#ifdef OCPN_FLATPAK_BUILD
+#include "GL/gl_private.h"
 #endif
 
 #ifdef USE_GLES2
@@ -162,7 +164,7 @@ ClimatologyOverlayFactory::ClimatologyOverlayFactory( ClimatologyDialog &dlg )
             int i = 0;
             bool failed = false;
             wxString path = ClimatologyUserDataDirectory();
-        
+
             wxString servers[] = {"https://github.com"};
             int servercount = ((sizeof servers) / (sizeof *servers));
             wxString url = "/seandepagnier/climatology_pi_data/blob/master/";
@@ -176,7 +178,7 @@ ClimatologyOverlayFactory::ClimatologyOverlayFactory( ClimatologyDialog &dlg )
                 for(j=0; j<servercount; j++) {
                     int ind = (i+j)%servercount;
                     wxString urlpath = servers[ind] + url;
-                
+
                     _OCPN_DLStatus status = OCPN_downloadFile(
                         urlpath + fn + "?raw=true",
                         path+fn, _("downloading climatology data file"),
@@ -235,12 +237,12 @@ void ClimatologyOverlayFactory::GetDateInterpolation(const wxDateTime *cdate,
         }
         cdate = &m_CurrentTimeline;
     }
-    
+
     month = cdate->GetMonth();
     int day = cdate->GetDay();
     int daysinmonth = wxDateTime::GetNumberOfDays(cdate->GetMonth());
     dpos = (day-.5) / daysinmonth;
-    
+
     if(dpos > .5) {
         nmonth = month + 1;
         if(nmonth == 12)
@@ -466,7 +468,7 @@ static int color255(char a, char b)
 static wxColour TextColor(wxString text)
 {
     return wxColour(color255(text[1], text[2]), color255(text[3], text[4]), color255(text[5], text[6]));
-}                        
+}
 
 ColorMap *ColorMaps[] = {WindMap, CurrentMap, PressureMap, SeaTempMap, AirTempMap,
                          CloudMap, PrecipitationMap, RelativeHumidityMap, LightningMap,
@@ -546,7 +548,7 @@ void ClimatologyOverlayFactory::LoadInternal(wxGenericProgressDialog *progressdi
     if(progressdialog && !progressdialog->Update(26, _("sea level presure")))
         return;
     ReadSeaLevelPressureData("sealevelpressure");
-    
+
     if(progressdialog && !progressdialog->Update(27, _("sea surface tempertature")))
         return;
     ReadSeaSurfaceTemperatureData("seasurfacetemperature");
@@ -631,7 +633,7 @@ void ClimatologyOverlayFactory::Load()
     Free();
     m_sFailedMessage = "";
     m_FailedFiles.clear();
-    
+
     wxGenericProgressDialog *progressdialog = nullptr;
     progressdialog = new wxGenericProgressDialog( _("Climatology"), wxString(), 38, &m_dlg,
                                      wxPD_CAN_ABORT | wxPD_ELAPSED_TIME );
@@ -654,7 +656,7 @@ void ClimatologyOverlayFactory::Free()
         delete m_CurrentData[m];
         m_CurrentData[m] = NULL;
     }
-    
+
     // free cyclones
     std::list<Cyclone*> *cyclones[6] = {&m_epa, &m_wpa, &m_spa, &m_atl, &m_nio, &m_she};
     for(int i=0; i < 6; i++) {
@@ -685,7 +687,7 @@ void ClimatologyOverlayFactory::ReadWindData(int month, wxString filename)
     }
 
     m_dlg.m_cbWind->Enable();
-    
+
     wxUint16 header[7];
     int dirs;
     if(zu_read(f, header, sizeof header) != sizeof header)
@@ -885,7 +887,7 @@ havedata:
                    || m_CurrentData[month]->latitudes != latitudes
                    || m_CurrentData[month]->longitudes != longitudes)
                     continue;
-                
+
                 u += m_CurrentData[month]->Value(U, lati, loni);
                 v += m_CurrentData[month]->Value(V, lati, loni);
                 mcount++;
@@ -1252,7 +1254,7 @@ bool ClimatologyOverlayFactory::ReadCycloneData(wxString filename, std::list<Cyc
             lastcyclonestate = cyclonestate;
             lastdatetime = CycloneDateTime(day, month, lyear, hour);
             lastlat = lat, lastlon = lon;
-                
+
             if(zu_read(f, &wk, sizeof wk) != sizeof wk ||
                zu_read(f, &press, sizeof press) != sizeof press)
                 goto corrupted;
@@ -1310,7 +1312,7 @@ void ClimatologyOverlayFactory::BuildCycloneCache()
                     continue;
 
                 /* rebuild cache for these? */
-#ifndef __OCPN__ANDROID__                
+#ifndef __OCPN__ANDROID__
                 wxDateTime dt = (*it2)->datetime.DateTime();
                 //wxLogMessage(climatology_pi + "   " + dt.Format() + ", " + m_dlg.m_cfgdlg->m_dPStart->GetValue().Format());
                 if((dt < m_dlg.m_cfgdlg->m_dPStart->GetValue()) ||
@@ -1327,7 +1329,7 @@ void ClimatologyOverlayFactory::BuildCycloneCache()
                     ElNinoYear elninoyear = m_ElNinoYears[year];
                     int month = (*it2)->datetime.month;
                     double value = elninoyear.months[month];
-        
+
                     if(isnan(value)) {
                         if(!m_dlg.m_cfgdlg->m_cbNotAvailable->GetValue())
                             continue;
@@ -1362,7 +1364,7 @@ void ClimatologyOverlayFactory::BuildCycloneCache()
     }
 
     wxLogMessage(climatology_pi + _("cyclone cache time ") + wxString::Format("%ld ms", sw.Time()));
-    
+
     for(int i=0; i<CYCLONE_CACHE_SEMAPHORE_COUNT; i++)
         m_cyclone_cache_semaphore.Post();
 }
@@ -1422,7 +1424,7 @@ bool ClimatologyOverlayFactory::CreateGLTexture(ClimatologyOverlay &O,
     double s;
     double latoff = 0, lonoff = 0;
     switch(setting) {
-    case ClimatologyOverlaySettings::WIND:   
+    case ClimatologyOverlaySettings::WIND:
         s = m_WindData[month]->longitudes / 360;
         latoff = 90.0/m_WindData[month]->latitudes;
         lonoff = 180.0/m_WindData[month]->longitudes;
@@ -1513,7 +1515,7 @@ static inline void glTexCoord2d_2(int multitexturing, double x, double y)
 
 void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, ClimatologyOverlay &O2,
                                                double dpos, PlugIn_ViewPort &vp, double transparency)
-{ 
+{
     if( !O1.m_iTexture || !O2.m_iTexture )
         return;
 
@@ -1543,34 +1545,34 @@ void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, Climatolo
             double y1 = .5 * log((1 + s1) / (1 - s1));
             lat[i] = (1 + y1/M_PI)/2;
         }
-    
+
     glEnable(texture_format);
     glBindTexture(texture_format, O1.m_iTexture);
 
     float uv[8];
     float coords[8];
-    
+
     //normal uv
     uv[0] = lon[0]; uv[1] = lat[0]; uv[2] = lon[1]; uv[3] = lat[1];
     uv[4] = lon[2]; uv[5] = lat[2]; uv[6] = lon[3]; uv[7] = lat[3];
-        
+
     coords[0] = 0; coords[1] = 0; coords[2] = w; coords[3] = 0;
     coords[4] = w; coords[5] = h; coords[6] = 0; coords[7] = h;
-    
+
     glUseProgram( pi_texture_2DA_shader_program );
-    
+
     // Get pointers to the attributes in the program.
     GLint mPosAttrib = glGetAttribLocation( pi_texture_2DA_shader_program, "aPos" );
     GLint mUvAttrib  = glGetAttribLocation( pi_texture_2DA_shader_program, "aUV" );
-    
+
     // Set up the texture sampler to texture unit 0
     GLint texUni = glGetUniformLocation( pi_texture_2DA_shader_program, "uTex" );
     glUniform1i( texUni, 0 );
-    
+
     // Disable VBO's (vertex buffer objects) for attributes.
     glBindBuffer( GL_ARRAY_BUFFER, 0 );
     glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-    
+
     // Set the attribute mPosAttrib with the vertices in the screen coordinates...
     glVertexAttribPointer( mPosAttrib, 2, GL_FLOAT, GL_FALSE, 0, coords );
     // ... and enable it.
@@ -1585,20 +1587,20 @@ void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, Climatolo
     glVertexAttribPointer( mUvAttrib, 2, GL_FLOAT, GL_FALSE, 0, uv );
     // ... and enable it.
     glEnableVertexAttribArray( mUvAttrib );
-    
-    // Rotate 
+
+    // Rotate
     float angle = 0;
     mat4x4 I, Q;
     mat4x4_identity(I);
     mat4x4_rotate_Z(Q, I, angle);
-    
+
     // Translate
     Q[3][0] = 0;
     Q[3][1] = 0;
-    
+
     GLint matloc = glGetUniformLocation(pi_texture_2DA_shader_program,"TransformMatrix");
-    glUniformMatrix4fv( matloc, 1, GL_FALSE, (const GLfloat*)Q); 
-    
+    glUniformMatrix4fv( matloc, 1, GL_FALSE, (const GLfloat*)Q);
+
     // Select the active texture unit.
     glActiveTexture( GL_TEXTURE0 );
 
@@ -1611,7 +1613,7 @@ void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, Climatolo
     co1[5] = coords[7];
     co1[6] = coords[4];
     co1[7] = coords[5];
-    
+
     float tco1[8];
     tco1[0] = uv[0];
     tco1[1] = uv[1];
@@ -1621,12 +1623,12 @@ void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, Climatolo
     tco1[5] = uv[7];
     tco1[6] = uv[4];
     tco1[7] = uv[5];
-    
+
     glVertexAttribPointer( mPosAttrib, 2, GL_FLOAT, GL_FALSE, 0, co1 );
     glVertexAttribPointer( mUvAttrib, 2, GL_FLOAT, GL_FALSE, 0, tco1 );
-    
+
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    
+
     glDisable(texture_format);
 #else
     int multitexturing;
@@ -1640,7 +1642,7 @@ void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, Climatolo
         glEnable(texture_format);
         glBindTexture(texture_format, O2.m_iTexture);
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-        s_glActiveTextureARB (GL_TEXTURE1_ARB); 
+        s_glActiveTextureARB (GL_TEXTURE1_ARB);
    } else
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
@@ -1676,7 +1678,7 @@ void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, Climatolo
 
 //            constColor[3] = 1;//1 - transparency;
 //            glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, constColor);
-        
+
             glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
             glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_REPLACE);
             glTexEnvf(GL_TEXTURE_ENV, GL_COMBINE_ALPHA_ARB, GL_MODULATE);
@@ -1724,7 +1726,7 @@ void ClimatologyOverlayFactory::DrawGLTexture( ClimatologyOverlay &O1, Climatolo
                 ty[i] *= O1.m_height;
             }
         }
-    
+
         double tw = (texture_format == GL_TEXTURE_RECTANGLE_ARB) ? O1.m_width : 1;
         double s = .5 * tw/O1.m_width;
 
@@ -1975,7 +1977,7 @@ static double InterpTable(double ind, const double table[], int tablesize)
 
     return interp_table_value(ind, ind1, ind2, table[ind1], table[ind2]);
 }
- 
+
 double ClimatologyOverlayFactory::getValueMonth(enum Coord coord, int setting,
                                                 double lat, double lon, int month)
 {
@@ -2151,7 +2153,7 @@ int ClimatologyOverlayFactory::CycloneTrackCrossings(double lat1, double lon1, d
         m_cyclone_cache_semaphore.Post();
         return -1;
     }
-        
+
     int lon_min = wxMin(lon1, lon2), lon_max = wxMax(lon1, lon2);
 
     if(lon_min > 15 || lon_max > 15)
@@ -2181,7 +2183,7 @@ int ClimatologyOverlayFactory::CycloneTrackCrossings(double lat1, double lon1, d
                     it != cyclonestates.end(); it++) {
                     wxPoint p;
                     CycloneState *ss = *it;
-                        
+
                     int cday = ss->datetime.month*365/12 + ss->datetime.day - 1;
                     int daydiff = cday - day;
                     if(daydiff > 183)
@@ -2191,7 +2193,7 @@ int ClimatologyOverlayFactory::CycloneTrackCrossings(double lat1, double lon1, d
                         /* we should split all cyclones at 15 degrees longitude... until then... */
                         while(lon1 - ss->lon[0] > 180) lon1 -= 360, lon2 -= 360;
                         while(lon1 - ss->lon[0] < -180) lon1 += 360, lon2 += 360;
-                                
+
                         if(TestIntersectionXY(lat1, lon1, lat2, lon2,
                                               ss->lat[0], ss->lon[0],
                                               ss->lat[1], ss->lon[1])) {
@@ -2428,7 +2430,7 @@ void ClimatologyOverlayFactory::RenderDirectionArrows(int setting, PlugIn_ViewPo
                 u/=mag, v/=mag;
             else if(mag < minv)
                 continue;
-            
+
             double t = vp.rotation;
             double x = -size*(u*cos(t) + v*sin(t)), y = size*(v*cos(t) - u*sin(t));
             wxPoint p;
@@ -2499,14 +2501,14 @@ void ClimatologyOverlayFactory::RenderWindAtlas(PlugIn_ViewPort &vp)
                 RenderNumber(p, 100.0*gale, wxColour(255, 0, 0, opacity));
             else if(calm > 0)
                 RenderNumber(p, 100.0*calm, wxColour(0, 0, 180, opacity));
-            
+
             wxColour c(0, 0, 0, opacity);
             DrawCircle(p.x, p.y, r, c, 2);
 
             for(int d = 0; d<dir_cnt; d++) {
-                double theta = 2*M_PI*d/dir_cnt + vp.rotation; 
+                double theta = 2*M_PI*d/dir_cnt + vp.rotation;
                 double x1 = p.x+r*sin(theta), y1 = p.y-r*cos(theta);
-                
+
                 if(directions[d] == 0)
                     continue;
 
@@ -2546,7 +2548,7 @@ void ClimatologyOverlayFactory::RenderCycloneSegment(CycloneState &ss, PlugIn_Vi
         return;
 
     ss.drawn_counter = m_cyclone_drawn_counter;
-                    
+
     if(!m_dlg.m_cbAll->GetValue()) {
         int daydiff = abs(ss.datetime.day - m_CurrentTimeline.GetDay()
                           + 30.42*(ss.datetime.month - m_CurrentTimeline.GetMonth()));
@@ -2570,13 +2572,13 @@ void ClimatologyOverlayFactory::RenderCycloneSegment(CycloneState &ss, PlugIn_Vi
         GetCanvasPixLL( &vp, &p[1], lat[1], lon[1] );
 
         wxColour c = GetGraphicColor(CYCLONE_SETTING, ss.windknots);
-                            
+
         DrawLine(p[0].x, p[0].y, p[1].x, p[1].y, c, 2);
-                            
+
         /* direction arrow */
         wxPoint a((p[0].x+p[1].x)/2, (p[0].y+p[1].y)/2);
         wxPoint d(p[0].x-p[1].x, p[0].y-p[1].y);
-                            
+
         DrawLine(a.x, a.y, a.x + (d.x+d.y)/5, a.y + (d.y-d.x)/5, c, 2);
         DrawLine(a.x, a.y, a.x + (d.x-d.y)/5, a.y + (d.x+d.y)/5, c, 2);
     }
@@ -2604,18 +2606,18 @@ void ClimatologyOverlayFactory::RenderCyclones(PlugIn_ViewPort &vp)
         glScalef(vp.view_scale_ppm/NORM_FACTOR, vp.view_scale_ppm/NORM_FACTOR, 1);
         glRotated(vp.rotation*180/M_PI, 0, 0, 1);
     }
-    
+
     if(!m_bUpdateCyclones)
         glCallList(m_cyclonesDisplayList);
     else {
         if(!m_pdc) {
             m_bUpdateCyclones = false;
-        
+
             nvp.clat = 0;
             nvp.clon = cclon - 180;
             nvp.view_scale_ppm = NORM_FACTOR;
             nvp.rotation = nvp.skew = 0;
-    
+
             if(!m_cyclonesDisplayList)
                 m_cyclonesDisplayList = glGenLists(1);
             glNewList(m_cyclonesDisplayList, GL_COMPILE_AND_EXECUTE);
