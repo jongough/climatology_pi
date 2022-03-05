@@ -38,7 +38,7 @@
 #include "GL/gl_private.h"
 #endif
 
-#ifdef OCPN_FLATPAK_BUILD
+#ifdef FLATPAK
 #include "GL/gl_private.h"
 #endif
 
